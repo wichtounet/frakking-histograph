@@ -15,6 +15,8 @@
 
 #include <opencv2/opencv.hpp>
 
+static constexpr bool debug = false;
+
 struct point {
     float x;
     float y;
@@ -29,7 +31,15 @@ int main(int argc, char* argv[]) {
         dataset = argv[1];
     }
 
-    std::string locations_folder = dataset + "/gt/locations/01/";
+    std::string data_target_folder = "/home/wichtounet/datasets/washington/data/";
+    if (argc > 2) {
+        dataset = argv[2];
+    }
+
+    auto locations_folder = dataset + "/gt/locations/01/";
+    auto raw_target_folder = data_target_folder + "/word_raw/";
+    auto gray_target_folder = data_target_folder + "/word_gray/";
+    auto binary_target_folder = data_target_folder + "/word_binary/";
 
     std::cout << "Start reading frakking SVG folder:" << locations_folder << std::endl;
 
@@ -37,7 +47,9 @@ int main(int argc, char* argv[]) {
     struct dirent* entry;
     auto dir = opendir(locations_folder.c_str());
 
-    cv::namedWindow("image_window");
+    if (debug) {
+        cv::namedWindow("image_window");
+    }
 
     while ((entry = readdir(dir))) {
         std::string file_name(entry->d_name);
@@ -113,23 +125,43 @@ int main(int argc, char* argv[]) {
             std::vector<std::vector<cv::Point>> cv_points_points;
             cv_points_points.push_back(cv_points);
 
-            cv::polylines( image_mat, cv_points_points, true, cv::Scalar( 0 ), 1, 8);
+            if(debug){
+                cv::polylines( image_mat, cv_points_points, true, cv::Scalar( 0 ), 1, 8);
+            }
 
             auto rect = cv::minAreaRect(cv_points_points[0]);
 
-            // Retarded OpenCV drawing rotated rect
-            cv::Point2f rect_vertices[4];
-            rect.points(rect_vertices);
-            for (int i = 0; i < 4; i++){
-                cv::line(image_mat, rect_vertices[i], rect_vertices[(i+1)%4], cv::Scalar(128));
+            if (debug) {
+                // Retarded OpenCV drawing rotated rect
+                cv::Point2f rect_vertices[4];
+                rect.points(rect_vertices);
+                for (int i = 0; i < 4; i++) {
+                    cv::line(image_mat, rect_vertices[i], rect_vertices[(i + 1) % 4], cv::Scalar(128));
+                }
             }
 
             // Bounding Rect
             auto bounding_rect = rect.boundingRect();
-            cv::rectangle(image_mat, bounding_rect, cv::Scalar(255));
 
-            cv::imshow("image_window", image_mat);
-            cv::waitKey(-1);
+            if (debug) {
+                cv::rectangle(image_mat, bounding_rect, cv::Scalar(255));
+            }
+
+            cv::imwrite(raw_target_folder + "/" + id + ".png", image_mat(bounding_rect));
+
+            if (debug) {
+                cv::imshow("image_window", image_mat);
+                cv::waitKey(-1);
+            }
+
+            cv::Mat resized = image_mat(bounding_rect);
+
+            if(resized.size().height != 120){
+                auto ratio = (float) 120 / resized.size().height;
+                cv::resize(resized, resized, cv::Size(resized.size().width * ratio, 120), 0, 0, CV_INTER_CUBIC);
+            }
+
+            cv::imwrite(gray_target_folder + "/" + id + ".png", resized);
         }
     }
 
