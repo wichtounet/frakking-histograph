@@ -15,6 +15,8 @@
 
 #include <opencv2/opencv.hpp>
 
+namespace {
+
 static constexpr bool debug = false;
 
 struct point {
@@ -23,6 +25,8 @@ struct point {
 
     point(float x, float y) : x(x), y(y) {}
 };
+
+} // end of anonymous namespace
 
 int main(int argc, char* argv[]) {
     // Get the dataset path
@@ -36,9 +40,9 @@ int main(int argc, char* argv[]) {
         dataset = argv[2];
     }
 
-    auto locations_folder = dataset + "/gt/locations/01/";
-    auto raw_target_folder = data_target_folder + "/word_raw/";
-    auto gray_target_folder = data_target_folder + "/word_gray/";
+    auto locations_folder     = dataset + "/gt/locations/01/";
+    auto raw_target_folder    = data_target_folder + "/word_raw/";
+    auto gray_target_folder   = data_target_folder + "/word_gray/";
     auto binary_target_folder = data_target_folder + "/word_binary/";
 
     std::cout << "Start reading frakking SVG folder:" << locations_folder << std::endl;
@@ -63,7 +67,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Found frakking image:" << image_name << std::endl;
 
         std::string image_path = dataset + "/data/pages/" + image_name + ".jpg";
-        auto image_mat = cv::imread(image_path, CV_LOAD_IMAGE_ANYDEPTH);
+        auto image_mat         = cv::imread(image_path, CV_LOAD_IMAGE_ANYDEPTH);
 
         std::string full_name(locations_folder + "/" + file_name);
 
@@ -71,23 +75,23 @@ int main(int argc, char* argv[]) {
 
         std::string line;
         while (std::getline(stream, line)) {
-            if(line.find("<path ") == std::string::npos){
+            if (line.find("<path ") == std::string::npos) {
                 continue;
             }
 
-            if(line.find("id=\"") == std::string::npos){
+            if (line.find("id=\"") == std::string::npos) {
                 continue;
             }
 
             auto path_start = line.find("d=\"") + 3;
-            auto path_end = line.find("\"", path_start);
-            auto path = line.substr(path_start, path_end - path_start);
+            auto path_end   = line.find("\"", path_start);
+            auto path       = line.substr(path_start, path_end - path_start);
 
             auto id_start = line.find("id=\"") + 4;
-            auto id_end = line.find("\"", id_start);
-            auto id = line.substr(id_start, id_end - id_start);
+            auto id_end   = line.find("\"", id_start);
+            auto id       = line.substr(id_start, id_end - id_start);
 
-            if(id == "null"){
+            if (id == "null") {
                 continue;
             }
 
@@ -95,11 +99,11 @@ int main(int argc, char* argv[]) {
 
             std::istringstream ss(path);
 
-            while(true){
+            while (true) {
                 char c;
                 ss >> c;
 
-                if(c == 'Z'){
+                if (c == 'Z') {
                     break;
                 }
 
@@ -118,15 +122,15 @@ int main(int argc, char* argv[]) {
 
             std::vector<cv::Point> cv_points(points.size());
 
-            for(size_t i = 0; i < points.size(); ++i){
+            for (size_t i = 0; i < points.size(); ++i) {
                 cv_points[i] = cv::Point(points[i].x, points[i].y);
             }
 
             std::vector<std::vector<cv::Point>> cv_points_points;
             cv_points_points.push_back(cv_points);
 
-            if(debug){
-                cv::polylines( image_mat, cv_points_points, true, cv::Scalar( 0 ), 1, 8);
+            if (debug) {
+                cv::polylines(image_mat, cv_points_points, true, cv::Scalar(0), 1, 8);
             }
 
             auto rect = cv::minAreaRect(cv_points_points[0]);
@@ -156,8 +160,8 @@ int main(int argc, char* argv[]) {
 
             cv::Mat resized = image_mat(bounding_rect);
 
-            if(resized.size().height != 120){
-                auto ratio = (float) 120 / resized.size().height;
+            if (resized.size().height != 120) {
+                auto ratio = (float)120 / resized.size().height;
                 cv::resize(resized, resized, cv::Size(resized.size().width * ratio, 120), 0, 0, CV_INTER_CUBIC);
             }
 
