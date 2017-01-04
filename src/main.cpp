@@ -113,7 +113,20 @@ int main(int argc, char* argv[]) {
             std::vector<std::vector<cv::Point>> cv_points_points;
             cv_points_points.push_back(cv_points);
 
-            cv::fillPoly( image_mat, cv_points_points, cv::Scalar( 0 ));
+            cv::polylines( image_mat, cv_points_points, true, cv::Scalar( 0 ), 1, 8);
+
+            auto rect = cv::minAreaRect(cv_points_points[0]);
+
+            // Retarded OpenCV drawing rotated rect
+            cv::Point2f rect_vertices[4];
+            rect.points(rect_vertices);
+            for (int i = 0; i < 4; i++){
+                cv::line(image_mat, rect_vertices[i], rect_vertices[(i+1)%4], cv::Scalar(128));
+            }
+
+            // Bounding Rect
+            auto bounding_rect = rect.boundingRect();
+            cv::rectangle(image_mat, bounding_rect, cv::Scalar(255));
 
             cv::imshow("image_window", image_mat);
             cv::waitKey(-1);
