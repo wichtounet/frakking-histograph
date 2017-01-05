@@ -342,10 +342,7 @@ int main(int argc, char* argv[]) {
 
             cv::Mat binary = resized.clone();
 
-            cv::GaussianBlur(binary, binary, cv::Size(0, 0), 1.5, 1.5);
-            cv::threshold(binary, binary, 0, 255, CV_THRESH_BINARY + CV_THRESH_OTSU);
-
-            NiblackSauvolaWolfJolion (resized, binary, WOLFJOLION, 40, 40, 0.5, 128);
+            NiblackSauvolaWolfJolion (resized, binary, WOLFJOLION, 20, 20, 0.5, 128);
 
             if (debug) {
                 cv::imshow("binary_window", binary);
